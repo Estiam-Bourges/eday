@@ -56,6 +56,8 @@
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-semibold">Toutes les idées ({{ totalIdeas }})</h2>
         <div class="flex items-center space-x-4">
+          <IdeaStatusFilter v-model="statusFilter" />
+          
           <select v-model="itemsPerPage" @change="changeItemsPerPage(itemsPerPage)" class="px-3 py-1 border border-gray-300 rounded-md text-sm">
             <option value="9">9 par page</option>
             <option value="12">12 par page</option>
@@ -137,6 +139,7 @@ interface Idea {
   id: string
   title: string
   description: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'IMPLEMENTED'
   author: {
     id: string
     name: string
@@ -162,6 +165,7 @@ const currentPage = ref(1)
 const itemsPerPage = ref(9)
 const totalIdeas = ref(0)
 const totalPages = ref(0)
+const statusFilter = ref('ALL')
 let intervalId: NodeJS.Timeout | null = null
 
 const loadIdeas = async (isAutoRefresh = false) => {
@@ -176,11 +180,12 @@ const loadIdeas = async (isAutoRefresh = false) => {
       query: {
         page: currentPage.value,
         limit: itemsPerPage.value,
-        sort: sortBy.value
+        sort: sortBy.value,
+        status: statusFilter.value
       }
     })
     
-    // L'API retourne maintenant toujours un objet avec pagination
+    // L'API retourne un objet avec pagination
     ideas.value = data.ideas || []
     totalIdeas.value = data.total || 0
     totalPages.value = data.totalPages || 1
@@ -212,8 +217,8 @@ const changeItemsPerPage = (newLimit: number) => {
   loadIdeas()
 }
 
-// Watcher pour recharger quand le tri change
-watch(sortBy, () => {
+// Watcher pour recharger quand le tri ou le statut change
+watch([sortBy, statusFilter], () => {
   currentPage.value = 1
   loadIdeas()
 })
@@ -269,10 +274,6 @@ const handleVote = async (ideaId: string, type: 'UP' | 'DOWN') => {
   } catch (error) {
     console.error('Erreur lors du vote:', error)
   }
-}
-
-const truncateText = (text: string, length: number) => {
-  return text.length > length ? text.substring(0, length) + '...' : text
 }
 
 const getPaginationRange = () => {

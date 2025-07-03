@@ -15,6 +15,7 @@
               <span class="text-sm text-gray-600">
                 Bonjour, {{ user.name }}
               </span>
+              
               <NuxtLink
                 to="/profile"
                 class="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm transition-colors"

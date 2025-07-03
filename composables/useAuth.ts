@@ -85,6 +85,7 @@ export const useAuth = () => {
   const getSession = async () => {
     try {
       const result = await authClient.getSession()
+      
       if (result.data?.user) {
         user.value = result.data.user
       } else {
@@ -98,8 +99,12 @@ export const useAuth = () => {
     }
   }
 
+  const refreshSession = async () => {
+    console.log('Rafraîchissement forcé de la session...')
+    await getSession()
+  }
+
   const isAuthenticated = computed(() => !!user.value)
-  const isAdmin = computed(() => user.value?.role === 'ADMIN')
 
   return {
     user: readonly(user),
@@ -108,7 +113,7 @@ export const useAuth = () => {
     signUp,
     signOut,
     getSession,
-    isAuthenticated,
-    isAdmin
+    refreshSession,
+    isAuthenticated
   }
 }

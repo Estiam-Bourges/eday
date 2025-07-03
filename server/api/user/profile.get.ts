@@ -80,7 +80,8 @@ export default defineEventHandler(async (event) => {
         id: userData.id,
         name: userData.name,
         email: userData.email,
-        createdAt: userData.createdAt
+        createdAt: userData.createdAt,
+        role: userData.role
       },
       stats,
       recentIdeas

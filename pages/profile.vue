@@ -67,6 +67,7 @@
           >
             <span class="mr-2">📝</span> Proposer une nouvelle idée
           </button>
+          
           <button
             @click="signOut()"
             class="w-full text-left px-4 py-2 bg-red-50 hover:bg-red-100 rounded-md text-red-700 transition-colors"

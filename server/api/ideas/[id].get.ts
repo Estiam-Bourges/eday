@@ -58,6 +58,7 @@ export default defineEventHandler(async (event) => {
       id: idea.id,
       title: idea.title,
       description: idea.description,
+      status: idea.status,
       author: idea.author,
       upvotes: idea.votes.filter(v => v.type === 'UP').length,
       downvotes: idea.votes.filter(v => v.type === 'DOWN').length,

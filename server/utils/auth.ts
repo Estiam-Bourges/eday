@@ -5,7 +5,7 @@ export async function requireAuth(event: H3Event) {
   const session = await auth.api.getSession({
     headers: getHeaders(event)
   })
-  
+
   if (!session?.user) {
     throw createError({
       statusCode: 401,
@@ -27,17 +27,4 @@ export async function getSession(event: H3Event) {
     console.error('Erreur lors de la récupération de la session:', error)
     return null
   }
-}
-
-export async function requireAdmin(event: H3Event) {
-  const user = await requireAuth(event)
-  
-  if (user.role !== 'ADMIN') {
-    throw createError({
-      statusCode: 403,
-      statusMessage: 'Permissions administrateur requises'
-    })
-  }
-  
-  return user
 }

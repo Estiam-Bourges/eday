@@ -1,9 +1,20 @@
 <template>
   <div
-    class="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow cursor-pointer w-full max-w-full overflow-hidden"
+    :class="[
+      'bg-white rounded-lg shadow p-6 hover:shadow-md transition-all duration-200 cursor-pointer w-full max-w-full overflow-hidden relative',
+      statusGlowClass
+    ]"
     @click="$router.push(`/idea/${idea.id}`)"
   >
-    <h3 class="font-semibold text-lg mb-2 break-words overflow-wrap-anywhere line-clamp-2">
+    <!-- Badge de statut -->
+    <div v-if="shouldShowStatusBadge" class="absolute top-3 right-3">
+      <div :class="statusBadgeClass" class="flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium">
+        <span>{{ statusIcon }}</span>
+        <span>{{ statusLabel }}</span>
+      </div>
+    </div>
+
+    <h3 class="font-semibold text-lg mb-2 break-words overflow-wrap-anywhere line-clamp-2 pr-20">
       {{ idea.title }}
     </h3>
     
@@ -69,6 +80,7 @@ interface Idea {
   id: string
   title: string
   description: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'IMPLEMENTED'
   author: {
     id: string
     name: string
@@ -92,6 +104,51 @@ const emit = defineEmits<{
 }>()
 
 const votingState = ref<'UP' | 'DOWN' | null>(null)
+
+const shouldShowStatusBadge = computed(() => {
+  return props.idea.status !== 'PENDING'
+})
+
+const statusIcon = computed(() => {
+  const icons = {
+    PENDING: '⏳',
+    APPROVED: '✅',
+    REJECTED: '❌',
+    IMPLEMENTED: '🚀'
+  }
+  return icons[props.idea.status] || '❓'
+})
+
+const statusLabel = computed(() => {
+  const labels = {
+    PENDING: 'En attente',
+    APPROVED: 'Approuvée',
+    REJECTED: 'Rejetée',
+    IMPLEMENTED: 'Réalisée'
+  }
+  return labels[props.idea.status] || 'Inconnu'
+})
+
+const statusBadgeClass = computed(() => {
+  const classes = {
+    PENDING: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
+    APPROVED: 'bg-green-100 text-green-800 border border-green-200',
+    REJECTED: 'bg-red-100 text-red-800 border border-red-200',
+    IMPLEMENTED: 'bg-blue-100 text-blue-800 border border-blue-200'
+  }
+  return classes[props.idea.status] || 'bg-gray-100 text-gray-800 border border-gray-200'
+})
+
+const statusGlowClass = computed(() => {
+  if (props.idea.status === 'PENDING') return ''
+  
+  const glowClasses = {
+    APPROVED: 'ring-2 ring-green-200 shadow-green-100',
+    REJECTED: 'ring-2 ring-red-200 shadow-red-100',
+    IMPLEMENTED: 'ring-2 ring-blue-200 shadow-blue-100'
+  }
+  return glowClasses[props.idea.status] || ''
+})
 
 const truncatedDescription = computed(() => {
   const maxLength = 120
