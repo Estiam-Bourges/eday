@@ -4,10 +4,9 @@
       <div class="max-w-6xl mx-auto px-4 py-4">
         <div class="flex justify-between items-center">
           <div>
-            <NuxtLink to="/" class="text-2xl font-bold text-gray-900 hover:text-blue-600">
-              🐮 Moocow
+            <NuxtLink to="/" class="hover:opacity-80 transition-opacity">
+              <img src="~/assets/img/logo.png" alt="Moocow Logo" class="h-18 w-auto" />
             </NuxtLink>
-            <p class="text-gray-600 mt-1">Partagez vos idées et découvrez celles de la communauté</p>
           </div>
           
           <div class="flex items-center space-x-4">
@@ -53,9 +52,23 @@
         </div>
       </div>
     </header>
-    <main class="max-w-6xl mx-auto px-4 py-8">
+    <main class="max-w-6xl mx-auto px-4 py-8 flex-grow">
       <slot />
     </main>
+    <footer class="bg-white border-t py-6 mt-8">
+      <div class="max-w-6xl mx-auto px-4">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="text-gray-600 text-sm mb-3 md:mb-0">
+            &copy; {{ new Date().getFullYear() }} OGEC Union Lasallienne - Tous droits réservés
+          </div>
+          <div>
+            <NuxtLink to="/mentions-legales" class="text-blue-600 hover:text-blue-800 text-sm">
+              Mentions légales
+            </NuxtLink>
+          </div>
+        </div>
+      </div>
+    </footer>
   </div>
 </template>
 

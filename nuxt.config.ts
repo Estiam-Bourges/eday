@@ -7,7 +7,8 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   modules: [
     '@nuxt/fonts',
-    '@nuxt/icon'
+    '@nuxt/icon',
+    '@nuxtjs/seo'
   ],
   vite: {
     plugins: [
@@ -19,6 +20,11 @@ export default defineNuxtConfig({
     provider: {
       type: 'local'
     }
+  },
+  site: {
+    name: 'MooCow',
+    description: 'La boîte à idées !',
+    defaultLocale: 'fr'
   },
   runtimeConfig: {
     authSecret: process.env.NUXT_AUTH_SECRET,

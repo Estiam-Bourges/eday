@@ -3,7 +3,10 @@
     class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
   >
     <div class="max-w-md w-full space-y-8">
-      <div>
+      <div class="text-center">
+        <NuxtLink to="/" class="inline-block">
+          <img src="~/assets/img/logo.png" alt="Moocow Logo" class="h-24 mx-auto mb-4" />
+        </NuxtLink>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Connexion
         </h2>
@@ -76,6 +79,10 @@
 </template>
 
 <script setup lang="ts">
+useHead({
+  title: 'Se connecter',
+})
+
 // Define interfaces for type safety
 interface LoginForm {
   email: string;

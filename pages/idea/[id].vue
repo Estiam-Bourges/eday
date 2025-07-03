@@ -134,6 +134,10 @@
 </template>
 
 <script lang="ts" setup>
+useHead({
+  title: 'Détail de l\'idée',
+})
+
 const { user } = useAuth()
 const route = useRoute()
 const ideaId = route.params.id as string
@@ -180,6 +184,9 @@ const loadIdea = async () => {
     idea.value = null
   } finally {
     loading.value = false
+    useHead({
+      title: idea.value ? `${idea.value.title}` : 'Idée non trouvée',
+    })
   }
 }
 

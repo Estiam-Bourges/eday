@@ -40,7 +40,7 @@
             <span class="text-gray-600">Votes donnés</span>
             <span class="font-semibold text-purple-600">{{ profileData.stats.votesCount }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between pt-2 border-t">
             <span class="text-gray-600">Votes reçus (👍)</span>
             <span class="font-semibold text-green-500">{{ profileData.stats.totalUpvotes }}</span>
           </div>
@@ -141,6 +141,10 @@
 </template>
 
 <script setup>
+useHead({
+  title: 'Profile',
+})
+
 const { user, signOut } = useAuth()
 
 const profileData = ref(null)
