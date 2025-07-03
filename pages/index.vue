@@ -71,8 +71,33 @@
         </div>
       </div>
       
-      <div v-if="loading" class="text-center py-8">
-        <p class="text-gray-500">Chargement des idées...</p>
+      <div v-if="loading" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div v-for="i in Number(itemsPerPage)" :key="i" class="bg-white rounded-lg shadow overflow-hidden">
+          <!-- Skeleton loader card -->
+          <div class="p-4 space-y-4">
+            <!-- Titre -->
+            <div class="h-6 bg-gray-200 rounded animate-pulse w-3/4"></div>
+            
+            <!-- Auteur -->
+            <div class="h-4 bg-gray-100 rounded animate-pulse w-1/3"></div>
+            
+            <!-- Description -->
+            <div class="space-y-2">
+              <div class="h-4 bg-gray-100 rounded animate-pulse"></div>
+              <div class="h-4 bg-gray-100 rounded animate-pulse"></div>
+              <div class="h-4 bg-gray-100 rounded animate-pulse w-2/3"></div>
+            </div>
+            
+            <!-- Votes et commentaires -->
+            <div class="flex justify-between pt-4">
+              <div class="flex space-x-2">
+                <div class="h-8 w-16 bg-green-100 rounded-full animate-pulse"></div>
+                <div class="h-8 w-16 bg-red-100 rounded-full animate-pulse"></div>
+              </div>
+              <div class="h-5 w-20 bg-gray-100 rounded animate-pulse"></div>
+            </div>
+          </div>
+        </div>
       </div>
       
       <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -133,6 +158,10 @@
 </template>
 
 <script lang="ts" setup>
+useHead({
+  title: 'Accueil',
+})
+
 const { user } = useAuth()
 
 interface Idea {
