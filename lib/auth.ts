@@ -1,9 +1,6 @@
 import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
-import { PrismaClient } from "@prisma/client"
-import { admin } from "better-auth/plugins"
-
-const prisma = new PrismaClient()
+import { prisma } from "~/server/utils/prisma"
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -17,9 +14,8 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 7, // 7 jours
     updateAge: 60 * 60 * 24 // 1 jour
   },
-  secret: process.env.BETTER_AUTH_SECRET || "secret-key-change-in-production",
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
-  plugins: [
-    admin() 
+  trustedOrigins: [
+    process.env.BETTER_AUTH_URL || "http://localhost:3000"
   ]
 })

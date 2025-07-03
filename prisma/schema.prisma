@@ -19,6 +19,16 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
+  role       String?
+  banned     Boolean?
+  banReason  String?
+  banExpires DateTime?
+
+  // Relations pour la boîte à idées
+  ideas      Idea[]
+  comments   Comment[]
+  votes      Vote[]
+
   @@unique([email])
   @@map("user")
 }
@@ -33,6 +43,8 @@ model Session {
   userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  impersonatedBy String?
 
   @@unique([token])
   @@map("session")
@@ -66,4 +78,47 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+model Idea {
+  id          String    @id @default(cuid())
+  title       String    @db.VarChar(100)
+  description String    @db.VarChar(1000)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+  votes       Vote[]
+
+  @@map("idea")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+  ideaId    String
+  authorId  String
+  idea      Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("comment")
+}
+
+model Vote {
+  id     String   @id @default(cuid())
+  type   VoteType
+  ideaId String
+  userId String
+  idea   Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ideaId, userId])
+  @@map("vote")
+}
+
+enum VoteType {
+  UP
+  DOWN
 }

@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-8">
     <!-- Formulaire de soumission -->
-    <div class="bg-white rounded-lg shadow p-6">
+    <div v-if="user" class="bg-white rounded-lg shadow p-6">
       <h2 class="text-xl font-semibold mb-4">Proposer une nouvelle idée</h2>
       <form @submit.prevent="submitIdea" class="space-y-4">
         <div>
@@ -36,12 +36,19 @@
         
         <button
           type="submit"
-          :disabled="!newIdea.title.trim() || !newIdea.description.trim()"
+          :disabled="!newIdea.title.trim() || !newIdea.description.trim() || submitting"
           class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
-          Soumettre l'idée
+          {{ submitting ? 'Soumission...' : 'Soumettre l\'idée' }}
         </button>
       </form>
+    </div>
+
+    <div v-else class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+      <p class="text-blue-800 mb-4">Connectez-vous pour proposer une nouvelle idée</p>
+      <NuxtLink to="/auth/signin" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
+        Se connecter
+      </NuxtLink>
     </div>
 
     <!-- Liste des idées -->
@@ -54,7 +61,11 @@
         </select>
       </div>
       
-      <div class="grid gap-4">
+      <div v-if="loading" class="text-center py-8">
+        <p class="text-gray-500">Chargement des idées...</p>
+      </div>
+      
+      <div v-else class="grid gap-4">
         <div
           v-for="idea in sortedIdeas"
           :key="idea.id"
@@ -62,12 +73,13 @@
           @click="$router.push(`/idea/${idea.id}`)"
         >
           <h3 class="font-semibold text-lg mb-2">{{ idea.title }}</h3>
-          <p class="text-gray-600 mb-4">{{ truncateText(idea.description, 150) }}</p>
+          <p class="text-gray-600 mb-2">{{ truncateText(idea.description, 150) }}</p>
+          <p class="text-sm text-gray-500 mb-4">Par {{ idea.author.name }}</p>
           
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
               <button
-                @click.stop="vote(idea.id, 'up')"
+                @click.stop="vote(idea.id, 'UP')"
                 class="flex items-center space-x-1 px-3 py-1 rounded-full bg-green-100 hover:bg-green-200 transition-colors"
               >
                 <span>👍</span>
@@ -75,7 +87,7 @@
               </button>
               
               <button
-                @click.stop="vote(idea.id, 'down')"
+                @click.stop="vote(idea.id, 'DOWN')"
                 class="flex items-center space-x-1 px-3 py-1 rounded-full bg-red-100 hover:bg-red-200 transition-colors"
               >
                 <span>👎</span>
@@ -90,7 +102,7 @@
         </div>
       </div>
       
-      <div v-if="ideas.length === 0" class="text-center py-12 text-gray-500">
+      <div v-if="!loading && ideas.length === 0" class="text-center py-12 text-gray-500">
         <p>Aucune idée n'a encore été soumise.</p>
         <p class="mt-2">Soyez le premier à partager votre idée !</p>
       </div>
@@ -99,14 +111,20 @@
 </template>
 
 <script lang="ts" setup>
+const { user } = useAuth()
+
 interface Idea {
-  id: number
+  id: string
   title: string
   description: string
+  author: {
+    id: string
+    name: string
+  }
   upvotes: number
   downvotes: number
   commentsCount: number
-  createdAt: Date
+  createdAt: string
 }
 
 const newIdea = ref({
@@ -116,6 +134,8 @@ const newIdea = ref({
 
 const ideas = ref<Idea[]>([])
 const sortBy = ref('popularity')
+const loading = ref(true)
+const submitting = ref(false)
 
 const sortedIdeas = computed(() => {
   const sorted = [...ideas.value]
@@ -126,35 +146,67 @@ const sortedIdeas = computed(() => {
   }
 })
 
-const submitIdea = () => {
-  if (!newIdea.value.title.trim() || !newIdea.value.description.trim()) return
-  
-  const idea: Idea = {
-    id: Date.now(),
-    title: newIdea.value.title.trim(),
-    description: newIdea.value.description.trim(),
-    upvotes: 0,
-    downvotes: 0,
-    commentsCount: 0,
-    createdAt: new Date()
+const loadIdeas = async () => {
+  try {
+    loading.value = true
+    const data = await $fetch('/api/ideas')
+    ideas.value = data as Idea[]
+  } catch (error) {
+    console.error('Erreur lors du chargement des idées:', error)
+  } finally {
+    loading.value = false
   }
-  
-  ideas.value.unshift(idea)
-  newIdea.value = { title: '', description: '' }
 }
 
-const vote = (ideaId: number, type: 'up' | 'down') => {
-  const idea = ideas.value.find(i => i.id === ideaId)
-  if (!idea) return
+const submitIdea = async () => {
+  if (!newIdea.value.title.trim() || !newIdea.value.description.trim()) return
   
-  if (type === 'up') {
-    idea.upvotes++
-  } else {
-    idea.downvotes++
+  try {
+    submitting.value = true
+    const data = await $fetch('/api/ideas', {
+      method: 'POST',
+      body: {
+        title: newIdea.value.title,
+        description: newIdea.value.description
+      }
+    })
+    
+    ideas.value.unshift(data as Idea)
+    newIdea.value = { title: '', description: '' }
+  } catch (error) {
+    console.error('Erreur lors de la soumission:', error)
+  } finally {
+    submitting.value = false
+  }
+}
+
+const vote = async (ideaId: string, type: 'UP' | 'DOWN') => {
+  if (!user.value) {
+    await navigateTo('/auth/signin')
+    return
+  }
+  
+  try {
+    const data = await $fetch(`/api/ideas/${ideaId}/vote`, {
+      method: 'POST',
+      body: { type }
+    })
+    
+    const idea = ideas.value.find(i => i.id === ideaId)
+    if (idea) {
+      idea.upvotes = data.upvotes
+      idea.downvotes = data.downvotes
+    }
+  } catch (error) {
+    console.error('Erreur lors du vote:', error)
   }
 }
 
 const truncateText = (text: string, length: number) => {
   return text.length > length ? text.substring(0, length) + '...' : text
 }
+
+onMounted(() => {
+  loadIdeas()
+})
 </script>
