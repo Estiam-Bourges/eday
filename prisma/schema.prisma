@@ -18,7 +18,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
-  role       UserRole? @default(USER)
+  role       String
   banned     Boolean?
   banReason  String?
   banExpires DateTime?
@@ -116,11 +116,6 @@ model Vote {
 
   @@unique([ideaId, userId])
   @@map("vote")
-}
-
-enum UserRole {
-  USER
-  ADMIN
 }
 
 enum IdeaStatus {
