@@ -57,10 +57,9 @@
         <h2 class="text-xl font-semibold">Toutes les idées ({{ totalIdeas }})</h2>
         <div class="flex items-center space-x-4">
           <select v-model="itemsPerPage" @change="changeItemsPerPage(itemsPerPage)" class="px-3 py-1 border border-gray-300 rounded-md text-sm">
-            <option value="5">5 par page</option>
-            <option value="10">10 par page</option>
-            <option value="20">20 par page</option>
-            <option value="50">50 par page</option>
+            <option value="9">9 par page</option>
+            <option value="12">12 par page</option>
+            <option value="15">15 par page</option>
           </select>
           
           <select v-model="sortBy" class="px-3 py-1 border border-gray-300 rounded-md text-sm">
@@ -160,7 +159,7 @@ const loading = ref(true)
 const submitting = ref(false)
 const isAutoRefreshing = ref(false)
 const currentPage = ref(1)
-const itemsPerPage = ref(10)
+const itemsPerPage = ref(9)
 const totalIdeas = ref(0)
 const totalPages = ref(0)
 let intervalId: NodeJS.Timeout | null = null
