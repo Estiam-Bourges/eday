@@ -55,10 +55,12 @@
     <div>
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-semibold">Toutes les idées ({{ ideas.length }})</h2>
-        <select v-model="sortBy" class="px-3 py-1 border border-gray-300 rounded-md text-sm">
-          <option value="popularity">Trier par popularité</option>
-          <option value="recent">Plus récentes</option>
-        </select>
+        <div class="flex items-center space-x-4">
+          <select v-model="sortBy" class="px-3 py-1 border border-gray-300 rounded-md text-sm">
+            <option value="popularity">Trier par popularité</option>
+            <option value="recent">Plus récentes</option>
+          </select>
+        </div>
       </div>
       
       <div v-if="loading" class="text-center py-8">
@@ -136,6 +138,8 @@ const ideas = ref<Idea[]>([])
 const sortBy = ref('popularity')
 const loading = ref(true)
 const submitting = ref(false)
+const isAutoRefreshing = ref(false)
+let intervalId: NodeJS.Timeout | null = null
 
 const sortedIdeas = computed(() => {
   const sorted = [...ideas.value]
@@ -146,16 +150,36 @@ const sortedIdeas = computed(() => {
   }
 })
 
-const loadIdeas = async () => {
+const loadIdeas = async (isAutoRefresh = false) => {
   try {
-    loading.value = true
+    if (isAutoRefresh) {
+      isAutoRefreshing.value = true
+    } else {
+      loading.value = true
+    }
+    
     const data = await $fetch('/api/ideas')
     ideas.value = data as Idea[]
   } catch (error) {
     console.error('Erreur lors du chargement des idées:', error)
   } finally {
-    loading.value = false
+    if (isAutoRefresh) {
+      isAutoRefreshing.value = false
+    } else {
+      loading.value = false
+    }
   }
+}
+
+// Actualisation automatique transparente
+const startAutoRefresh = () => {
+  if (intervalId) {
+    clearInterval(intervalId)
+  }
+  
+  intervalId = setInterval(() => {
+    loadIdeas(true) // Actualisation transparente
+  }, 5000) // 5 secondes
 }
 
 const submitIdea = async () => {
@@ -207,6 +231,13 @@ const truncateText = (text: string, length: number) => {
 }
 
 onMounted(() => {
-  loadIdeas()
+  loadIdeas() // Chargement initial avec loading
+  startAutoRefresh()
+})
+
+onUnmounted(() => {
+  if (intervalId) {
+    clearInterval(intervalId)
+  }
 })
 </script>

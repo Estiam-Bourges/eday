@@ -19,7 +19,6 @@
                 to="/profile"
                 class="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm transition-colors"
               >
-                <span>👤</span>
                 <span>Mon profil</span>
               </NuxtLink>
               <button
@@ -27,7 +26,6 @@
                 :disabled="signingOut"
                 class="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 text-sm transition-colors disabled:opacity-50"
               >
-                <span>🚪</span>
                 <span>{{ signingOut ? 'Déconnexion...' : 'Déconnexion' }}</span>
               </button>
             </div>
