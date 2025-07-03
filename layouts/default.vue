@@ -5,7 +5,7 @@
         <div class="flex justify-between items-center">
           <div>
             <NuxtLink to="/" class="text-2xl font-bold text-gray-900 hover:text-blue-600">
-              💡 Boîte à Idées
+              🐮 Moocow
             </NuxtLink>
             <p class="text-gray-600 mt-1">Partagez vos idées et découvrez celles de la communauté</p>
           </div>

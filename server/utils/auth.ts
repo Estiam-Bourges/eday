@@ -17,9 +17,16 @@ export async function requireAuth(event: H3Event) {
 }
 
 export async function getSession(event: H3Event) {
-  return await auth.api.getSession({
-    headers: getHeaders(event)
-  })
+  try {
+    const session = await auth.api.getSession({
+      headers: event.node.req.headers
+    })
+    
+    return session?.user || null
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la session:', error)
+    return null
+  }
 }
 
 export async function requireAdmin(event: H3Event) {
