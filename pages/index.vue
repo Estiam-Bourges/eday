@@ -74,41 +74,14 @@
         <p class="text-gray-500">Chargement des idées...</p>
       </div>
       
-      <div v-else class="grid gap-4">
-        <div
+      <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <IdeaCard
           v-for="idea in ideas"
           :key="idea.id"
-          class="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow cursor-pointer w-full max-w-full overflow-hidden"
-          @click="$router.push(`/idea/${idea.id}`)"
-        >
-          <h3 class="font-semibold text-lg mb-2 break-words overflow-wrap-anywhere">{{ idea.title }}</h3>
-          <p class="text-gray-600 mb-2 break-words overflow-wrap-anywhere line-clamp-3">{{ truncateText(idea.description, 150) }}</p>
-          <p class="text-sm text-gray-500 mb-4 break-words overflow-wrap-anywhere">Par {{ idea.author.name }}</p>
-          
-          <div class="flex items-center justify-between min-w-0">
-            <div class="flex items-center space-x-4 min-w-0">
-              <button
-                @click.stop="vote(idea.id, 'UP')"
-                class="flex items-center space-x-1 px-3 py-1 rounded-full bg-green-100 hover:bg-green-200 transition-colors flex-shrink-0"
-              >
-                <span>👍</span>
-                <span class="text-sm font-medium">{{ idea.upvotes }}</span>
-              </button>
-              
-              <button
-                @click.stop="vote(idea.id, 'DOWN')"
-                class="flex items-center space-x-1 px-3 py-1 rounded-full bg-red-100 hover:bg-red-200 transition-colors flex-shrink-0"
-              >
-                <span>👎</span>
-                <span class="text-sm font-medium">{{ idea.downvotes }}</span>
-              </button>
-            </div>
-            
-            <div class="flex items-center space-x-2 text-sm text-gray-500 flex-shrink-0">
-              <span>💬 {{ idea.commentsCount }} commentaires</span>
-            </div>
-          </div>
-        </div>
+          :idea="idea"
+          :user="user"
+          @vote="handleVote"
+        />
       </div>
       
       <!-- Pagination -->
@@ -280,12 +253,7 @@ const submitIdea = async () => {
   }
 }
 
-const vote = async (ideaId: string, type: 'UP' | 'DOWN') => {
-  if (!user.value) {
-    await navigateTo('/auth/signin')
-    return
-  }
-  
+const handleVote = async (ideaId: string, type: 'UP' | 'DOWN') => {
   try {
     const data = await $fetch(`/api/ideas/${ideaId}/vote`, {
       method: 'POST',
