@@ -1,0 +1,212 @@
+<template>
+  <div v-if="loading" class="text-center py-12">
+    <p class="text-gray-500">Chargement...</p>
+  </div>
+  
+  <div v-else-if="idea" class="space-y-6">
+    <!-- Bouton retour -->
+    <button
+      @click="$router.back()"
+      class="flex items-center space-x-2 text-blue-600 hover:text-blue-800"
+    >
+      <span>←</span>
+      <span>Retour à la liste</span>
+    </button>
+
+    <!-- Détail de l'idée -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <h1 class="text-2xl font-bold mb-2">{{ idea.title }}</h1>
+      <p class="text-sm text-gray-500 mb-4">Par {{ idea.author.name }}</p>
+      <p class="text-gray-700 mb-6 whitespace-pre-wrap">{{ idea.description }}</p>
+      
+      <div class="flex items-center space-x-4">
+        <button
+          @click="vote('UP')"
+          :disabled="!user"
+          class="flex items-center space-x-2 px-4 py-2 rounded-full bg-green-100 hover:bg-green-200 transition-colors disabled:opacity-50"
+        >
+          <span>👍</span>
+          <span class="font-medium">{{ idea.upvotes }}</span>
+        </button>
+        
+        <button
+          @click="vote('DOWN')"
+          :disabled="!user"
+          class="flex items-center space-x-2 px-4 py-2 rounded-full bg-red-100 hover:bg-red-200 transition-colors disabled:opacity-50"
+        >
+          <span>👎</span>
+          <span class="font-medium">{{ idea.downvotes }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Section commentaires -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-xl font-semibold mb-4">
+        Commentaires ({{ idea.comments.length }})
+      </h2>
+      
+      <!-- Formulaire nouveau commentaire -->
+      <form v-if="user" @submit.prevent="addComment" class="mb-6">
+        <div class="mb-3">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Ajouter un commentaire
+          </label>
+          <textarea
+            v-model="newComment"
+            maxlength="500"
+            rows="3"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Partagez votre avis sur cette idée..."
+          ></textarea>
+          <p class="text-xs text-gray-500 mt-1">{{ newComment.length }}/500 caractères</p>
+        </div>
+        <button
+          type="submit"
+          :disabled="!newComment.trim() || commenting"
+          class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+        >
+          {{ commenting ? 'Envoi...' : 'Envoyer' }}
+        </button>
+      </form>
+      
+      <div v-else class="mb-6 p-4 bg-gray-50 rounded-md text-center">
+        <p class="text-gray-600 mb-2">Connectez-vous pour commenter</p>
+        <NuxtLink to="/auth/signin" class="text-blue-600 hover:text-blue-800">
+          Se connecter
+        </NuxtLink>
+      </div>
+      
+      <!-- Liste des commentaires -->
+      <div class="space-y-4">
+        <div
+          v-for="comment in idea.comments"
+          :key="comment.id"
+          class="border-l-4 border-gray-200 pl-4 py-2"
+        >
+          <p class="text-gray-700">{{ comment.content }}</p>
+          <p class="text-xs text-gray-500 mt-1">
+            Par {{ comment.author.name }} • {{ formatDate(comment.createdAt) }}
+          </p>
+        </div>
+        
+        <div v-if="idea.comments.length === 0" class="text-center py-8 text-gray-500">
+          <p>Aucun commentaire pour le moment.</p>
+          <p class="mt-1">Soyez le premier à donner votre avis !</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div v-else class="text-center py-12">
+    <p class="text-gray-500">Idée non trouvée.</p>
+    <button
+      @click="$router.push('/')"
+      class="mt-4 text-blue-600 hover:text-blue-800"
+    >
+      Retour à l'accueil
+    </button>
+  </div>
+</template>
+
+<script lang="ts" setup>
+const { user } = useAuth()
+const route = useRoute()
+const ideaId = route.params.id as string
+
+interface Comment {
+  id: string
+  content: string
+  author: {
+    id: string
+    name: string
+  }
+  createdAt: string
+}
+
+interface Idea {
+  id: string
+  title: string
+  description: string
+  author: {
+    id: string
+    name: string
+  }
+  upvotes: number
+  downvotes: number
+  comments: Comment[]
+  createdAt: string
+}
+
+const idea = ref<Idea | null>(null)
+const newComment = ref('')
+const loading = ref(true)
+const commenting = ref(false)
+
+const loadIdea = async () => {
+  try {
+    loading.value = true
+    const data = await $fetch(`/api/ideas/${ideaId}`)
+    idea.value = data as Idea
+  } catch (error) {
+    console.error('Erreur lors du chargement de l\'idée:', error)
+    idea.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+const vote = async (type: 'UP' | 'DOWN') => {
+  if (!user.value) {
+    await navigateTo('/auth/signin')
+    return
+  }
+  
+  if (!idea.value) return
+  
+  try {
+    const data = await $fetch(`/api/ideas/${ideaId}/vote`, {
+      method: 'POST',
+      body: { type }
+    })
+    
+    idea.value.upvotes = data.upvotes
+    idea.value.downvotes = data.downvotes
+  } catch (error) {
+    console.error('Erreur lors du vote:', error)
+  }
+}
+
+const addComment = async () => {
+  if (!newComment.value.trim() || !idea.value) return
+  
+  try {
+    commenting.value = true
+    const data = await $fetch(`/api/ideas/${ideaId}/comments`, {
+      method: 'POST',
+      body: { content: newComment.value }
+    })
+    
+    idea.value.comments.push(data as Comment)
+    newComment.value = ''
+  } catch (error) {
+    console.error('Erreur lors de l\'ajout du commentaire:', error)
+  } finally {
+    commenting.value = false
+  }
+}
+
+const formatDate = (dateString: string) => {
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(dateString))
+}
+
+onMounted(() => {
+  loadIdea()
+})
+</script>
