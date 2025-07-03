@@ -145,6 +145,7 @@ interface Idea {
   upvotes: number
   downvotes: number
   commentsCount: number
+  userVote: 'UP' | 'DOWN' | null
   createdAt: string
 }
 
@@ -264,6 +265,7 @@ const handleVote = async (ideaId: string, type: 'UP' | 'DOWN') => {
     if (idea) {
       idea.upvotes = data.upvotes
       idea.downvotes = data.downvotes
+      idea.userVote = data.userVote
     }
   } catch (error) {
     console.error('Erreur lors du vote:', error)

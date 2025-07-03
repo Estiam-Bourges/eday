@@ -1,4 +1,5 @@
 import { prisma } from '~/server/utils/prisma'
+import { getSession } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -9,10 +10,13 @@ export default defineEventHandler(async (event) => {
     
     const skip = (page - 1) * limit
     
+    // Récupérer l'utilisateur connecté
+    const currentUser = await getSession(event)
+    
     // Définir l'ordre de tri
     let orderBy
     if (sort === 'popularity') {
-      // Pour la popularité, on va d'abord récupérer les données puis trier
+      // Pour la popularité, récupérer les données puis trier
       orderBy = { createdAt: 'desc' }
     } else {
       orderBy = { createdAt: 'desc' }
@@ -42,17 +46,24 @@ export default defineEventHandler(async (event) => {
       take: limit
     })
 
-    const formattedIdeas = ideas.map(idea => ({
-      id: idea.id,
-      title: idea.title,
-      description: idea.description,
-      author: idea.author,
-      upvotes: idea.votes.filter(v => v.type === 'UP').length,
-      downvotes: idea.votes.filter(v => v.type === 'DOWN').length,
-      commentsCount: idea.comments.length,
-      createdAt: idea.createdAt,
-      updatedAt: idea.updatedAt
-    }))
+    const formattedIdeas = ideas.map(idea => {
+      const userVote = currentUser 
+        ? idea.votes.find(v => v.userId === currentUser.id)?.type || null
+        : null
+      
+      return {
+        id: idea.id,
+        title: idea.title,
+        description: idea.description,
+        author: idea.author,
+        upvotes: idea.votes.filter(v => v.type === 'UP').length,
+        downvotes: idea.votes.filter(v => v.type === 'DOWN').length,
+        commentsCount: idea.comments.length,
+        userVote,
+        createdAt: idea.createdAt,
+        updatedAt: idea.updatedAt
+      }
+    })
     
     // Trier par popularité si demandé (après avoir calculé les votes)
     if (sort === 'popularity') {

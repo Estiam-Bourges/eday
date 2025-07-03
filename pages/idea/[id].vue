@@ -22,20 +22,36 @@
       <div class="flex items-center space-x-4">
         <button
           @click="vote('UP')"
-          :disabled="!user"
-          class="flex items-center space-x-2 px-4 py-2 rounded-full bg-green-100 hover:bg-green-200 transition-colors disabled:opacity-50"
+          :disabled="!user || votingState === 'UP'"
+          :class="[
+            'flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-200 disabled:opacity-50 relative',
+            idea.userVote === 'UP' 
+              ? 'bg-green-200 border-2 border-green-400 text-green-800'
+              : 'bg-green-100 hover:bg-green-200',
+            votingState === 'UP' ? 'scale-110 bg-green-300' : ''
+          ]"
         >
-          <span>👍</span>
+          <span v-if="votingState === 'UP'" class="animate-spin">⏳</span>
+          <span v-else>👍</span>
           <span class="font-medium">{{ idea.upvotes }}</span>
+          <div v-if="votingState === 'UP'" class="absolute inset-0 rounded-full bg-green-200 animate-pulse"></div>
         </button>
         
         <button
           @click="vote('DOWN')"
-          :disabled="!user"
-          class="flex items-center space-x-2 px-4 py-2 rounded-full bg-red-100 hover:bg-red-200 transition-colors disabled:opacity-50"
+          :disabled="!user || votingState === 'DOWN'"
+          :class="[
+            'flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-200 disabled:opacity-50 relative',
+            idea.userVote === 'DOWN' 
+              ? 'bg-red-200 border-2 border-red-400 text-red-800'
+              : 'bg-red-100 hover:bg-red-200',
+            votingState === 'DOWN' ? 'scale-110 bg-red-300' : ''
+          ]"
         >
-          <span>👎</span>
+          <span v-if="votingState === 'DOWN'" class="animate-spin">⏳</span>
+          <span v-else>👎</span>
           <span class="font-medium">{{ idea.downvotes }}</span>
+          <div v-if="votingState === 'DOWN'" class="absolute inset-0 rounded-full bg-red-200 animate-pulse"></div>
         </button>
       </div>
     </div>
@@ -134,6 +150,7 @@ interface Idea {
   }
   upvotes: number
   downvotes: number
+  userVote: 'UP' | 'DOWN' | null
   comments: Comment[]
   createdAt: string
 }
@@ -142,6 +159,7 @@ const idea = ref<Idea | null>(null)
 const newComment = ref('')
 const loading = ref(true)
 const commenting = ref(false)
+const votingState = ref<'UP' | 'DOWN' | null>(null)
 
 const loadIdea = async () => {
   try {
@@ -162,7 +180,9 @@ const vote = async (type: 'UP' | 'DOWN') => {
     return
   }
   
-  if (!idea.value) return
+  if (!idea.value || votingState.value) return
+  
+  votingState.value = type
   
   try {
     const data = await $fetch(`/api/ideas/${ideaId}/vote`, {
@@ -172,8 +192,14 @@ const vote = async (type: 'UP' | 'DOWN') => {
     
     idea.value.upvotes = data.upvotes
     idea.value.downvotes = data.downvotes
+    idea.value.userVote = data.userVote
   } catch (error) {
     console.error('Erreur lors du vote:', error)
+  } finally {
+    // Délai pour permettre de voir l'animation
+    setTimeout(() => {
+      votingState.value = null
+    }, 300)
   }
 }
 

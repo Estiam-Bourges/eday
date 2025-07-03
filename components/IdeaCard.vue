@@ -19,30 +19,40 @@
       <div class="flex items-center space-x-3 min-w-0">
         <button
           @click.stop="handleVote('UP')"
-          :disabled="!user"
+          :disabled="!user || votingState === 'UP'"
           :class="[
-            'flex items-center space-x-1 px-2 py-1 rounded-full transition-colors flex-shrink-0 text-xs',
-            user 
-              ? 'bg-green-100 hover:bg-green-200' 
-              : 'bg-gray-100 cursor-not-allowed opacity-60'
+            'flex items-center space-x-1 px-2 py-1 rounded-full transition-all duration-200 flex-shrink-0 text-xs relative',
+            idea.userVote === 'UP' 
+              ? 'bg-green-200 border-2 border-green-400 text-green-800'
+              : user 
+                ? 'bg-green-100 hover:bg-green-200' 
+                : 'bg-gray-100 cursor-not-allowed opacity-60',
+            votingState === 'UP' ? 'scale-110 bg-green-300' : ''
           ]"
         >
-          <span>👍</span>
+          <span v-if="votingState === 'UP'" class="animate-spin">⏳</span>
+          <span v-else>👍</span>
           <span class="font-medium">{{ idea.upvotes }}</span>
+          <div v-if="votingState === 'UP'" class="absolute inset-0 rounded-full bg-green-200 animate-pulse"></div>
         </button>
         
         <button
           @click.stop="handleVote('DOWN')"
-          :disabled="!user"
+          :disabled="!user || votingState === 'DOWN'"
           :class="[
-            'flex items-center space-x-1 px-2 py-1 rounded-full transition-colors flex-shrink-0 text-xs',
-            user 
-              ? 'bg-red-100 hover:bg-red-200' 
-              : 'bg-gray-100 cursor-not-allowed opacity-60'
+            'flex items-center space-x-1 px-2 py-1 rounded-full transition-all duration-200 flex-shrink-0 text-xs relative',
+            idea.userVote === 'DOWN' 
+              ? 'bg-red-200 border-2 border-red-400 text-red-800'
+              : user 
+                ? 'bg-red-100 hover:bg-red-200' 
+                : 'bg-gray-100 cursor-not-allowed opacity-60',
+            votingState === 'DOWN' ? 'scale-110 bg-red-300' : ''
           ]"
         >
-          <span>👎</span>
+          <span v-if="votingState === 'DOWN'" class="animate-spin">⏳</span>
+          <span v-else>👎</span>
           <span class="font-medium">{{ idea.downvotes }}</span>
+          <div v-if="votingState === 'DOWN'" class="absolute inset-0 rounded-full bg-red-200 animate-pulse"></div>
         </button>
       </div>
       
@@ -66,6 +76,7 @@ interface Idea {
   upvotes: number
   downvotes: number
   commentsCount: number
+  userVote: 'UP' | 'DOWN' | null
   createdAt: string
 }
 
@@ -80,6 +91,8 @@ const emit = defineEmits<{
   vote: [ideaId: string, type: 'UP' | 'DOWN']
 }>()
 
+const votingState = ref<'UP' | 'DOWN' | null>(null)
+
 const truncatedDescription = computed(() => {
   const maxLength = 120
   return props.idea.description.length > maxLength 
@@ -87,12 +100,24 @@ const truncatedDescription = computed(() => {
     : props.idea.description
 })
 
-const handleVote = (type: 'UP' | 'DOWN') => {
-  if (!props.user) {
-    navigateTo('/auth/signin')
+const handleVote = async (type: 'UP' | 'DOWN') => {
+  if (!props.user || votingState.value) {
+    if (!props.user) {
+      navigateTo('/auth/signin')
+    }
     return
   }
-  emit('vote', props.idea.id, type)
+  
+  votingState.value = type
+  
+  try {
+    await emit('vote', props.idea.id, type)
+  } finally {
+    // Délai pour permettre de voir l'animation
+    setTimeout(() => {
+      votingState.value = null
+    }, 300)
+  }
 }
 
 const formatDate = (dateString: string) => {
