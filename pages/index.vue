@@ -54,8 +54,15 @@
     <!-- Liste des idées -->
     <div>
       <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-semibold">Toutes les idées ({{ ideas.length }})</h2>
+        <h2 class="text-xl font-semibold">Toutes les idées ({{ totalIdeas }})</h2>
         <div class="flex items-center space-x-4">
+          <select v-model="itemsPerPage" @change="changeItemsPerPage(itemsPerPage)" class="px-3 py-1 border border-gray-300 rounded-md text-sm">
+            <option value="5">5 par page</option>
+            <option value="10">10 par page</option>
+            <option value="20">20 par page</option>
+            <option value="50">50 par page</option>
+          </select>
+          
           <select v-model="sortBy" class="px-3 py-1 border border-gray-300 rounded-md text-sm">
             <option value="popularity">Trier par popularité</option>
             <option value="recent">Plus récentes</option>
@@ -69,20 +76,20 @@
       
       <div v-else class="grid gap-4">
         <div
-          v-for="idea in sortedIdeas"
+          v-for="idea in ideas"
           :key="idea.id"
-          class="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow cursor-pointer"
+          class="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow cursor-pointer w-full max-w-full overflow-hidden"
           @click="$router.push(`/idea/${idea.id}`)"
         >
-          <h3 class="font-semibold text-lg mb-2">{{ idea.title }}</h3>
-          <p class="text-gray-600 mb-2">{{ truncateText(idea.description, 150) }}</p>
-          <p class="text-sm text-gray-500 mb-4">Par {{ idea.author.name }}</p>
+          <h3 class="font-semibold text-lg mb-2 break-words overflow-wrap-anywhere">{{ idea.title }}</h3>
+          <p class="text-gray-600 mb-2 break-words overflow-wrap-anywhere line-clamp-3">{{ truncateText(idea.description, 150) }}</p>
+          <p class="text-sm text-gray-500 mb-4 break-words overflow-wrap-anywhere">Par {{ idea.author.name }}</p>
           
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-4">
+          <div class="flex items-center justify-between min-w-0">
+            <div class="flex items-center space-x-4 min-w-0">
               <button
                 @click.stop="vote(idea.id, 'UP')"
-                class="flex items-center space-x-1 px-3 py-1 rounded-full bg-green-100 hover:bg-green-200 transition-colors"
+                class="flex items-center space-x-1 px-3 py-1 rounded-full bg-green-100 hover:bg-green-200 transition-colors flex-shrink-0"
               >
                 <span>👍</span>
                 <span class="text-sm font-medium">{{ idea.upvotes }}</span>
@@ -90,18 +97,57 @@
               
               <button
                 @click.stop="vote(idea.id, 'DOWN')"
-                class="flex items-center space-x-1 px-3 py-1 rounded-full bg-red-100 hover:bg-red-200 transition-colors"
+                class="flex items-center space-x-1 px-3 py-1 rounded-full bg-red-100 hover:bg-red-200 transition-colors flex-shrink-0"
               >
                 <span>👎</span>
                 <span class="text-sm font-medium">{{ idea.downvotes }}</span>
               </button>
             </div>
             
-            <div class="flex items-center space-x-2 text-sm text-gray-500">
+            <div class="flex items-center space-x-2 text-sm text-gray-500 flex-shrink-0">
               <span>💬 {{ idea.commentsCount }} commentaires</span>
             </div>
           </div>
         </div>
+      </div>
+      
+      <!-- Pagination -->
+      <div v-if="!loading && totalPages > 1" class="flex justify-center items-center space-x-2 mt-8">
+        <button
+          @click="changePage(currentPage - 1)"
+          :disabled="currentPage === 1"
+          class="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          ← Précédent
+        </button>
+        
+        <div class="flex space-x-1">
+          <button
+            v-for="page in getPaginationRange()"
+            :key="page"
+            @click="changePage(page)"
+            :class="[
+              'px-3 py-2 border rounded-md',
+              page === currentPage 
+                ? 'bg-blue-600 text-white border-blue-600' 
+                : 'border-gray-300 hover:bg-gray-50'
+            ]"
+          >
+            {{ page }}
+          </button>
+        </div>
+        
+        <button
+          @click="changePage(currentPage + 1)"
+          :disabled="currentPage === totalPages"
+          class="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Suivant →
+        </button>
+      </div>
+      
+      <div v-if="!loading && totalPages > 1" class="text-center text-sm text-gray-500 mt-4">
+        Page {{ currentPage }} sur {{ totalPages }} ({{ totalIdeas }} idées au total)
       </div>
       
       <div v-if="!loading && ideas.length === 0" class="text-center py-12 text-gray-500">
@@ -139,16 +185,11 @@ const sortBy = ref('popularity')
 const loading = ref(true)
 const submitting = ref(false)
 const isAutoRefreshing = ref(false)
+const currentPage = ref(1)
+const itemsPerPage = ref(10)
+const totalIdeas = ref(0)
+const totalPages = ref(0)
 let intervalId: NodeJS.Timeout | null = null
-
-const sortedIdeas = computed(() => {
-  const sorted = [...ideas.value]
-  if (sortBy.value === 'popularity') {
-    return sorted.sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes))
-  } else {
-    return sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-  }
-})
 
 const loadIdeas = async (isAutoRefresh = false) => {
   try {
@@ -158,10 +199,24 @@ const loadIdeas = async (isAutoRefresh = false) => {
       loading.value = true
     }
     
-    const data = await $fetch('/api/ideas')
-    ideas.value = data as Idea[]
+    const data = await $fetch('/api/ideas', {
+      query: {
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+        sort: sortBy.value
+      }
+    })
+    
+    // L'API retourne maintenant toujours un objet avec pagination
+    ideas.value = data.ideas || []
+    totalIdeas.value = data.total || 0
+    totalPages.value = data.totalPages || 1
   } catch (error) {
     console.error('Erreur lors du chargement des idées:', error)
+    // En cas d'erreur, initialiser avec des valeurs par défaut
+    ideas.value = []
+    totalIdeas.value = 0
+    totalPages.value = 0
   } finally {
     if (isAutoRefresh) {
       isAutoRefreshing.value = false
@@ -171,7 +226,25 @@ const loadIdeas = async (isAutoRefresh = false) => {
   }
 }
 
-// Actualisation automatique transparente
+const changePage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    loadIdeas()
+  }
+}
+
+const changeItemsPerPage = (newLimit: number) => {
+  itemsPerPage.value = newLimit
+  currentPage.value = 1
+  loadIdeas()
+}
+
+// Watcher pour recharger quand le tri change
+watch(sortBy, () => {
+  currentPage.value = 1
+  loadIdeas()
+})
+
 const startAutoRefresh = () => {
   if (intervalId) {
     clearInterval(intervalId)
@@ -195,8 +268,11 @@ const submitIdea = async () => {
       }
     })
     
-    ideas.value.unshift(data as Idea)
     newIdea.value = { title: '', description: '' }
+    
+    // Recharger la première page pour voir la nouvelle idée
+    currentPage.value = 1
+    loadIdeas()
   } catch (error) {
     console.error('Erreur lors de la soumission:', error)
   } finally {
@@ -228,6 +304,19 @@ const vote = async (ideaId: string, type: 'UP' | 'DOWN') => {
 
 const truncateText = (text: string, length: number) => {
   return text.length > length ? text.substring(0, length) + '...' : text
+}
+
+const getPaginationRange = () => {
+  const range = []
+  const delta = 2 // Nombre de pages à afficher de chaque côté de la page actuelle
+  
+  for (let i = Math.max(1, currentPage.value - delta); 
+       i <= Math.min(totalPages.value, currentPage.value + delta); 
+       i++) {
+    range.push(i)
+  }
+  
+  return range
 }
 
 onMounted(() => {

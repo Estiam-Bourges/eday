@@ -15,9 +15,9 @@
 
     <!-- Détail de l'idée -->
     <div class="bg-white rounded-lg shadow p-6">
-      <h1 class="text-2xl font-bold mb-2">{{ idea.title }}</h1>
-      <p class="text-sm text-gray-500 mb-4">Par {{ idea.author.name }}</p>
-      <p class="text-gray-700 mb-6 whitespace-pre-wrap">{{ idea.description }}</p>
+      <h1 class="text-2xl font-bold mb-2 break-words">{{ idea.title }}</h1>
+      <p class="text-sm text-gray-500 mb-4 break-words">Par {{ idea.author.name }}</p>
+      <p class="text-gray-700 mb-6 whitespace-pre-wrap break-words">{{ idea.description }}</p>
       
       <div class="flex items-center space-x-4">
         <button
@@ -84,8 +84,8 @@
           :key="comment.id"
           class="border-l-4 border-gray-200 pl-4 py-2"
         >
-          <p class="text-gray-700">{{ comment.content }}</p>
-          <p class="text-xs text-gray-500 mt-1">
+          <p class="text-gray-700 break-words whitespace-pre-wrap">{{ comment.content }}</p>
+          <p class="text-xs text-gray-500 mt-1 break-words">
             Par {{ comment.author.name }} • {{ formatDate(comment.createdAt) }}
           </p>
         </div>
