@@ -14,8 +14,16 @@
     </button>
 
     <!-- Détail de l'idée -->
-    <div class="bg-white rounded-lg shadow p-6">
-      <h1 class="text-2xl font-bold mb-2 break-words">{{ idea.title }}</h1>
+    <div :class="['bg-white rounded-lg shadow p-6 relative', statusGlowClass]">
+      <!-- Badge de statut -->
+      <div v-if="shouldShowStatusBadge" class="absolute top-4 right-4">
+        <div :class="statusBadgeClass" class="flex items-center space-x-2 px-3 py-2 rounded-full text-sm font-medium">
+          <span class="text-lg">{{ statusIcon }}</span>
+          <span>{{ statusLabel }}</span>
+        </div>
+      </div>
+
+      <h1 class="text-2xl font-bold mb-2 break-words pr-32">{{ idea.title }}</h1>
       <p class="text-sm text-gray-500 mb-4 break-words">Par {{ idea.author.name }}</p>
       <p class="text-gray-700 mb-6 whitespace-pre-wrap break-words">{{ idea.description }}</p>
       
@@ -144,6 +152,7 @@ interface Idea {
   id: string
   title: string
   description: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'IMPLEMENTED'
   author: {
     id: string
     name: string
@@ -231,6 +240,54 @@ const formatDate = (dateString: string) => {
     minute: '2-digit'
   }).format(new Date(dateString))
 }
+
+const statusIcon = computed(() => {
+  if (!idea.value) return ''
+  const icons = {
+    PENDING: '⏳',
+    APPROVED: '✅',
+    REJECTED: '❌',
+    IMPLEMENTED: '🚀'
+  }
+  return icons[idea.value.status] || '❓'
+})
+
+const statusLabel = computed(() => {
+  if (!idea.value) return ''
+  const labels = {
+    PENDING: 'En attente de validation',
+    APPROVED: 'Idée approuvée',
+    REJECTED: 'Idée rejetée',
+    IMPLEMENTED: 'Idée réalisée'
+  }
+  return labels[idea.value.status] || 'Statut inconnu'
+})
+
+const statusBadgeClass = computed(() => {
+  if (!idea.value) return ''
+  const classes = {
+    PENDING: 'bg-yellow-100 text-yellow-800 border border-yellow-300',
+    APPROVED: 'bg-green-100 text-green-800 border border-green-300',
+    REJECTED: 'bg-red-100 text-red-800 border border-red-300',
+    IMPLEMENTED: 'bg-blue-100 text-blue-800 border border-blue-300'
+  }
+  return classes[idea.value.status] || 'bg-gray-100 text-gray-800 border border-gray-300'
+})
+
+const statusGlowClass = computed(() => {
+  if (!idea.value || idea.value.status === 'PENDING') return ''
+  
+  const glowClasses = {
+    APPROVED: 'ring-2 ring-green-200 shadow-lg shadow-green-100',
+    REJECTED: 'ring-2 ring-red-200 shadow-lg shadow-red-100',
+    IMPLEMENTED: 'ring-2 ring-blue-200 shadow-lg shadow-blue-100'
+  }
+  return glowClasses[idea.value.status] || ''
+})
+
+const shouldShowStatusBadge = computed(() => {
+  return idea.value && idea.value.status !== 'PENDING'
+})
 
 onMounted(() => {
   loadIdea()

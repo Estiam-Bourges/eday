@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
+import { admin } from "better-auth/plugins"
 import { prisma } from "~/server/utils/prisma"
 
 export const auth = betterAuth({
@@ -10,12 +11,21 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false
   },
+  plugins: [
+    admin()
+  ],
   session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 jours
-    updateAge: 60 * 60 * 24 // 1 jour
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 60 * 24 * 7 // 7 days
+    }
   },
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
-  trustedOrigins: [
-    process.env.BETTER_AUTH_URL || "http://localhost:3000"
-  ]
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        defaultValue: "user"
+      }
+    }
+  }
 })

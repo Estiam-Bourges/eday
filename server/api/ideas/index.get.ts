@@ -7,11 +7,15 @@ export default defineEventHandler(async (event) => {
     const page = parseInt(query.page as string) || 1
     const limit = parseInt(query.limit as string) || 9
     const sort = query.sort as string || 'recent'
+    const status = query.status as string
     
     const skip = (page - 1) * limit
     
     // Récupérer l'utilisateur connecté
     const currentUser = await getSession(event)
+    
+    // Construire le filtre
+    const where = status && status !== 'ALL' ? { status } : {}
     
     // Définir l'ordre de tri
     let orderBy
@@ -22,11 +26,12 @@ export default defineEventHandler(async (event) => {
       orderBy = { createdAt: 'desc' }
     }
     
-    // Récupérer le total des idées
-    const total = await prisma.idea.count()
+    // Récupérer le total des idées avec filtre
+    const total = await prisma.idea.count({ where })
     
-    // Récupérer les idées avec pagination
+    // Récupérer les idées avec pagination et filtre
     const ideas = await prisma.idea.findMany({
+      where,
       include: {
         author: {
           select: {
@@ -55,6 +60,7 @@ export default defineEventHandler(async (event) => {
         id: idea.id,
         title: idea.title,
         description: idea.description,
+        status: idea.status,
         author: idea.author,
         upvotes: idea.votes.filter(v => v.type === 'UP').length,
         downvotes: idea.votes.filter(v => v.type === 'DOWN').length,
