@@ -106,6 +106,7 @@ export const useAuth = () => {
 
   const isAuthenticated = computed(() => !!user.value)
 
+
   return {
     user: readonly(user),
     loading: readonly(loading),
